@@ -56,6 +56,17 @@ def order_details_views(request, order_id):
     return Response(data, status=status.HTTP_200_OK)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_single_order_views(request, pk):
+    order = Order.objects.get(pk=pk)
+    if not order:
+        return Response({"message": "This order does not exist!"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = OrderSerializer(order, many=False)
+    data = serializer.data
+    return Response(data, status=status.HTTP_200_OK)
+
+
 class DeliveryView(ListCreateAPIView):
     queryset = Delivery.objects.all()
     serializer_class = DeliverySerializer

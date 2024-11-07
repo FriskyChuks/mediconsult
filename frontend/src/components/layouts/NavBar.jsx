@@ -8,10 +8,14 @@ const NavBar = ({ baseURL }) => {
   const { search, user } = useContext(SearchContext);
   const [ searchQuery, setSearchQuery ] = search;
   const [email, setEmail] = user
-  const firstName = localStorage.getItem('firstname')
   const [isAuth, setIsAuth] = useState(false)
   const navigate = useNavigate()
   const [userGroup, setUserGroup] = useState('')
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [initials, setInitials] = useState('')
+
+  const MessageArray = ["timothy"]
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -22,6 +26,11 @@ const NavBar = ({ baseURL }) => {
     if(localStorage.getItem('access_token')){
         setEmail(localStorage.getItem('email'))
         setUserGroup(localStorage.getItem('user_group'))
+        setFirstName(localStorage.getItem('firstname'))
+        setLastName(localStorage.getItem('lastname'))
+        
+        setInitials(firstName.charAt(0).toUpperCase()+"."+ lastName.charAt(0).toUpperCase())
+
     }
   },)
 
@@ -125,11 +134,11 @@ const NavBar = ({ baseURL }) => {
                     </Link>
                     <div className="middle">
                         { email ? 
-                                    <>
+                                    <div className="d-flex gap-2">
                                     <div className="dropdown">
                                     <a href="#" className="dropdown-toggle text-light" data-bs-toggle="dropdown">
                                         <span><i className="fas fa-user-alt me-2"></i> 
-                                            {firstName}
+                                            {initials}
                                         </span>
                                     </a>
                                     <div className="dropdown-menu rounded">
@@ -140,7 +149,16 @@ const NavBar = ({ baseURL }) => {
                                         <Link onClick={handleSignout} className="dropdown-item"><i className="fas fa-power-off me-2"></i> Logout</Link>
                                     </div>
                                 </div>
-                                    </>
+                                <button type="button" className="btn btn-primary">
+                                    {MessageArray && MessageArray.length > 0 ? (
+                                    <i className="fa-solid fa-envelope-open-text" style={{color:"green"}}></i>
+                                    // <i className="bi bi-envelope-arrow-down-fill"></i>
+                                    ):(
+                                    <i className="bi bi-envelope-fill"></i>
+                                    )
+                                    }
+                                </button>
+                                    </div>
                                     :
                                     <>
                                     <button

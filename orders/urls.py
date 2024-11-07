@@ -6,6 +6,7 @@ from .views import *
 urlpatterns = [
     path('', OrdersListView.as_view()),
     path('create_order/', create_orders_view),
+    path('get_single_order/<pk>/', get_single_order_views),
     path('update_delete_order/<pk>/', OrdersRetrieveUpdateDeleteView.as_view()),
     path('update_delete_order_detail/<pk>/',
          OrderDetailRetrieveUpdateDeleteView.as_view()),

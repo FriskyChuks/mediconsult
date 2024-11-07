@@ -28,47 +28,53 @@ export default function LoginForm({ baseURL, loading, setLoading }) {
 
     try{const checkUser = await api.get(`${baseURL}/accounts/get_user/${email}/${phone}/`)
 
-    if(checkUser.data.length<1){
-      showMessage('This user does not exist','error');
-      setLoading(false)
-    } else
-      if(checkUser.data[0].is_active===false){
-        showMessage(activationMsg)
-        setLoading(false)
-      } //else {showMessage('Email/Password do not match','error')}
+        if(checkUser.data.length<1){
+          showMessage('This user does not exist','error');
+          setLoading(false)
+        } else
+          if(checkUser.data[0].is_active===false){
+            showMessage(activationMsg)
+            setLoading(false)
+          }
     }catch (error){
         showMessage('An Error has Occured. Try again', 'error')
         setLoading(false)
     }
 
     // GENERATE TOKEN
-    const res = await api.post(`${baseURL}/auth/jwt/create/`, user)
-    if(!res) {
-      showMessage('This user does not exist','error');
-      setLoading(false)
-    } else {
-      localStorage.setItem('refresh_token', res.data.refresh)
-      localStorage.setItem('access_token', res.data.access)
-      const access = localStorage.getItem('access_token')
-    if(access){
-        api.get(`${baseURL}/auth/users/me/`,{
-          headers: {
-            Authorization: `FRISKY ${access}`
-          }
-        }).then((res)=>{
-          console.log(res.data)
-          localStorage.setItem('firstname',res.data.firstname)
-          localStorage.setItem('lastname',res.data.lastname)
-          localStorage.setItem('email',res.data.email)
-          localStorage.setItem('phone',res.data.phone)
-          localStorage.setItem('user_id',res.data.id)
-          localStorage.setItem('user_group',res.data.user_group)
-          setLoading(false)
-          navigate('/')
-        })
-        api.post(`${baseURL}/accounts/set_user_online/${email}/`)
-      }
+      try {
+            const res = await api.post(`${baseURL}/auth/jwt/create/`, user)
+            if(!res) {
+              showMessage('This user does not exist','error');
+              setLoading(false)
+            } else {
+              localStorage.setItem('refresh_token', res.data.refresh)
+              localStorage.setItem('access_token', res.data.access)
+              const access = localStorage.getItem('access_token')
+            if(access){
+                api.get(`${baseURL}/auth/users/me/`,{
+                  headers: {
+                    Authorization: `FRISKY ${access}`
+                  }
+                }).then((res)=>{
+                  console.log(res.data)
+                  localStorage.setItem('firstname',res.data.firstname)
+                  localStorage.setItem('lastname',res.data.lastname)
+                  localStorage.setItem('email',res.data.email)
+                  localStorage.setItem('phone',res.data.phone)
+                  localStorage.setItem('user_id',res.data.id)
+                  localStorage.setItem('user_group',res.data.user_group)
+                  setLoading(false)
+                  navigate('/')
+                })
+                api.post(`${baseURL}/accounts/set_user_online/${email}/`)
+              }
+            }
+      } catch {
+        showMessage('Authentication failed!','error');
+        setLoading(false)
     }
+    
     
   };
 

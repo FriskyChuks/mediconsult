@@ -1,7 +1,5 @@
-import React from 'react'
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { confirmAlert } from 'react-confirm-alert'
 import { Spinner } from '../layouts/Spinner';
 
 import api from '../../AxiosInstance';
@@ -11,6 +9,7 @@ import { useMessage } from "../contexts/MessageContext";
 const OrderDetails = ({ baseURL, loading, setLoading }) => {
     const { showMessage } = useMessage();
     const [data, setData] = useState([]);
+    const [singleOder, setSingleOrder] = useState([]);
     const [totalCost, setTotalCost] = useState(0);  // State to track total cost
     const [isEditing, setIsEditing] = useState(null); // New state for tracking edit mode
     const navigate = useNavigate();
@@ -23,7 +22,14 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
             headers:{"Authorization":`FRISKY ${accessToken}`}
         });
         setData(res.data);
+        console.log(data)
         calculateTotal(res.data);  // Calculate total cost initially
+
+        const orderRes = await api.get(`${baseURL}/orders/get_single_order/${id}/`, {
+            headers:{"Authorization":`FRISKY ${accessToken}`}
+        });
+        setSingleOrder(orderRes.data) 
+        console.log(singleOder)
     };
 
     const handleEdit = (index) => {
@@ -69,8 +75,24 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
         }
     };
 
+    const billOrder = async () => {
+        await api.patch(`${baseURL}/orders/update_delete_order/${id}/`, {billed:true}, {
+            headers: { "Authorization": `FRISKY ${accessToken}` }
+        });
+    }
+
+    const processOrder = async () => {
+        await api.patch(`${baseURL}/orders/update_delete_order/${id}/`, {processing:true}, {
+            headers: { "Authorization": `FRISKY ${accessToken}` }
+        })
+    }
+
     const DeleteOrderDetail = async (orderDetailId) => {
         if (data.length > 1) {
+            const isConfirmed = window.confirm('Are you sure you want to delete this item?')
+            if(!isConfirmed){
+                return;
+            }
             await api.delete(`${baseURL}/orders/update_delete_order_detail/${orderDetailId}/`, {
                 headers: {"Authorization": `FRISKY ${accessToken}`}
             }).then(() => {
@@ -83,6 +105,11 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
     };
 
     const handleDeleteOrder = () => {
+        const isConfirmed = window.confirm(
+            'Are you sure you want to delete this Order? Every item in this order will be deleted. This action is IRREVERSIBLE')
+            if(!isConfirmed){
+                return;
+            }
         api.delete(`${baseURL}/orders/update_delete_order/${id}/`, {
             headers:{"Authorization":`FRISKY ${accessToken}`}
         }).then(() => {
@@ -92,56 +119,44 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
         });
     };
 
-    const deletOder = async () => {
-        confirmAlert({
-            title: 'Confirm to delete',
-            message: 'Are you sure you want to delete this item?',
-            buttons: [
-                {
-                    label: 'Yes',
-                    onClick: () => handleDeleteOrder()
-                },
-                {
-                    label: 'No',
-                    onClick: () => {} // Do nothing
-                }
-            ]
-        });
-    };
-
     // Handler to save changes back to the database
       const handleSave = async () => {
+        const isConfirmed = window.confirm(
+            'Are you sure you want to perform this action? This action is IRREVERSIBLE')
+            if(!isConfirmed){
+                return;
+            }
         setLoading(true)
-      try {
-        // Iterate over each order detail in the data array
-        const updatePromises = data.map(async (item) => {
-            const dataForUpdata =  { 
-                quantity:parseInt(item.quantity), price:parseFloat(item.price) 
-            } 
-            console.log(dataForUpdata)
-          // Make an individual API call for each order detail
-          const item_id = parseInt(item.id)
-          await api.patch(`${baseURL}/orders/update_delete_order_detail/${item_id}/`, dataForUpdata, {
-            headers: { "Authorization": `FRISKY ${accessToken}` }
-          });
-        });
-         // Wait for all the update requests to complete
-        await Promise.all(updatePromises);
+        try {
+            // Iterate over each order detail in the data array
+            const updatePromises = data.map(async (item) => {
+                const dataForUpdata =  { 
+                    quantity:parseInt(item.quantity), price:parseFloat(item.price) 
+                } 
+            // Make an individual API call for each order detail
+            const item_id = parseInt(item.id)
+            await api.patch(`${baseURL}/orders/update_delete_order_detail/${item_id}/`, dataForUpdata, {
+                headers: { "Authorization": `FRISKY ${accessToken}` }
+            });
+            });
+            // Wait for all the update requests to complete
+            await Promise.all(updatePromises);
 
-        await api.patch(`${baseURL}/orders/update_delete_order/${id}/`, {billed:true}, {
-            headers: { "Authorization": `FRISKY ${accessToken}` }
-          });
+            if(userGroup==='manager'){
+                { singleOder.billed ? processOrder() : billOrder() }
+            }
+            
 
-        // Success feedback to the user
-        showMessage('All order details saved successfully!', 'success');
+            // Success feedback to the user
+            showMessage('All order details saved successfully!', 'success');
 
-        setLoading(false)
-        // Refresh the order details after saving
-        fetchOrderDetails();
-    
-      } catch (error) {
-        showMessage('Error saving order details', 'error');
-      }
+            setLoading(false)
+            // Refresh the order details after saving
+            fetchOrderDetails();
+        
+        } catch (error) {
+            showMessage('Error saving order details', 'error');
+        }
     };
 
 
@@ -183,14 +198,14 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
                 <table className="table">
                     <thead>
                         <tr>
-                            <th>Product Name &nbsp; &nbsp; <span style={{fontSize:"small"}}>({data.length} items)</span></th>
-                            <th className="text-center">Quantity</th>
-                            <th className="text-center">Price</th>
-                            <th className="text-center">Subtotal</th>
+                            <th>Product Name <span style={{fontSize:"small"}}>({data.length} items)</span></th>
+                            <th className="">Quantity</th>
+                            <th className="">Price</th>
+                            <th className="">Subtotal</th>
                             { userGroup !== 'manager' ?
                             <th className="text-center">
                                 <button className="btn btn-sm btn-outline-danger" 
-                                onClick={deletOder}>
+                                onClick={handleDeleteOrder}>
                                     Delete Order
                                 </button>
                             </th> :
@@ -227,23 +242,21 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
                                     )}
                                 </td>
                                 <td className="text-center">
-                                    <div className="count-input">
-                                        <input type="number" className='form-control'
+                                        <input type="number" className='quantity-tweak form-control' 
                                             value={order.quantity}
                                             onChange={(e) => handleChange(index, 'quantity', e.target.value)}
-                                            readOnly={userGroup === 'manager' ? true : false}
+                                            readOnly={userGroup === 'manager' ? true : singleOder.processing ? true : false}
                                         />
-                                    </div>
                                 </td>
                                 <td className="text-center">
-                                    <input type="number" className='form-control' 
+                                    <input type="number" className='tweak form-control' 
                                         value={order.price}
                                         onChange={(e) => handleChange(index, 'price', e.target.value)}
-                                        readOnly={userGroup === 'manager' ? false : true}
+                                        readOnly={singleOder.processing ? true :userGroup  === 'manager' ? false : true}
                                     />
                                 </td>
                                 <td className="text-center">
-                                {`₦${(order.quantity * order.price).toLocaleString('en-NG', {minimumFractionDigits: 2})}`}
+                                    {`₦${(order.quantity * order.price).toLocaleString('en-NG', {minimumFractionDigits: 2})}`}
                                 </td>
                                 <td className="text-center">
                                     {userGroup === 'manager' ? 
@@ -279,11 +292,17 @@ const OrderDetails = ({ baseURL, loading, setLoading }) => {
                     <Link className="btn btn-outline-secondary" to='/orders'>
                         Back to Orders
                     </Link>
-                    {userGroup === 'manager' ?
-                        <Link className="btn btn-success" to="" style={{float:"right"}}
-                        onClick={handleSave}
-                      > Process Order
-                      </Link> : ""
+                    { singleOder.processing ? '' :
+                        userGroup === 'manager' ?
+                            <Link className="btn btn-success" to="" style={{float:"right"}}
+                                onClick={handleSave}
+                            > {!singleOder.billed ? 'Bill Order' : 'Process Order'}
+                            </Link>
+                        :
+                            <Link className="btn btn-success" to="" style={{float:"right"}}
+                                onClick={handleSave}> 
+                                Update Order 
+                            </Link> 
                     }
                     {loading && <Spinner/>}
                 </div>

@@ -66,7 +66,11 @@ const OrdersList = ({ baseURL }) => {
                         <td>{order.order_date.split('T')[0]}</td>
                         <td>N{new Intl.NumberFormat().format(order.discount)}.00</td>
                         <td>N{new Intl.NumberFormat().format(order.VAT)}.00</td>
-                        <td>{ order.processing ? 'Processing' : 'Pending' }</td>
+                        <td> { 
+                            order.billed ? 'billed' : 
+                            order.processing ? 'Processing' : 'Pending'
+                          }
+                         </td>
                       </tr>
                     </>
                   ))}

@@ -8,7 +8,7 @@ const MessageModal = () => {
     if (showModal) {
       const timer = setTimeout(() => {
         hideMessage();
-      }, 30000);
+      }, 10000);
       return () => clearTimeout(timer);
     }
   }, [showModal, hideMessage]);
@@ -43,7 +43,7 @@ const MessageModal = () => {
       alignItems: 'center',
       zIndex: 1000
     }}>
-      <span>{message}</span>
+      <p style={{paddingTop:"3px"}}>{message}</p>
       <span 
         style={{
           cursor: 'pointer', 

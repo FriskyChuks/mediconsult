@@ -87,14 +87,19 @@ main {
   z-index: 99999;
 }
 
-/* @media (max-width: 992px) {
-  #spinner {
-    display: flex !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    transition: opacity 0.5s ease-out;
-  }
-} */
+.tweak {
+  width: 150px !important;
+  text-align: center !important;
+}
+.quantity-tweak {
+  width: 100px !important;
+  text-align: center !important;
+}
+.table-center th,
+.table-center td {
+  text-align: center;
+  vertical-align: middle;
+}
 
 @media (min-width: 991px) {
   .user-dropdown {
